@@ -146,7 +146,6 @@ class FreeList
     allocate(T size)
     {
         assert(size > 0);
-
         // Find the best-fit free range, i.e.,
         // the smallest range whose size is greater than
         // equal to the requested allocation size.
