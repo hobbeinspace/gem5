@@ -34,7 +34,6 @@
 
 namespace gem5
 {
-
 SimpleCache::SimpleCache(const SimpleCacheParams &params) :
     ClockedObject(params),
     latency(params.latency),
@@ -55,6 +54,7 @@ SimpleCache::SimpleCache(const SimpleCacheParams &params) :
 Port &
 SimpleCache::getPort(const std::string &if_name, PortID idx)
 {
+    DPRINTF(SimpleCache, "getPort called with if_name %s and idx %d\n", if_name, idx);
     // This is the name from the Python SimObject declaration in SimpleCache.py
     if (if_name == "mem_side") {
         panic_if(idx != InvalidPortID,
@@ -419,6 +419,7 @@ SimpleCache::getAddrRanges() const
 void
 SimpleCache::sendRangeChange() const
 {
+    DPRINTF(SimpleCache, "Sending range change\n");
     for (auto& port : cpuPorts) {
         port.sendRangeChange();
     }
@@ -436,5 +437,4 @@ SimpleCache::SimpleCacheStats::SimpleCacheStats(statistics::Group *parent)
 {
     missLatency.init(16); // number of buckets
 }
-
 } // namespace gem5

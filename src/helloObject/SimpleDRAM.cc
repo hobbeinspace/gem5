@@ -6,9 +6,10 @@
 #include "sim/system.hh"
 
 namespace gem5{
-
+namespace memory
+{
 SimpleDRAM::SimpleDRAM(const SimpleDRAMParams &params) :
-    ClockedObject(params),
+    AbstractMemory(params),
     latency(params.latency),
     cpuPort(params.name + ".cpu_side", this)
 {
@@ -18,10 +19,25 @@ SimpleDRAM::SimpleDRAM(const SimpleDRAMParams &params) :
     }
     DPRINTF(SimpleDRAM,"constructing SimpleDRAM\n");
 }
+DrainState
+SimpleDRAM::drain()
+{
+    panic("DRAIN UNIMPL");
+    return DrainState::Drained;
+}
 
+
+void 
+SimpleDRAM::init(){
+    DPRINTF(SimpleDRAM, "Initializing SimpleDRAM\n");
+    ClockedObject::init();
+    if (cpuPort.isConnected()) {
+        cpuPort.sendRangeChange();
+    }
+}
 Port & SimpleDRAM::getPort(const std::string &if_name, PortID idx)
 {
-    // This is the name from the Python SimObject declaration in SimpleCache.py
+    DPRINTF(SimpleDRAM, "getPort called with if_name %s and idx %d\n", if_name, idx);
     if (if_name == "cpu_side") {
         return cpuPort;
     }
@@ -31,12 +47,12 @@ Port & SimpleDRAM::getPort(const std::string &if_name, PortID idx)
 }
 AddrRangeList SimpleDRAM::CPUSidePort::getAddrRanges() const
 {
+    DPRINTF(SimpleDRAM, "CPUSidePort getAddrRanges\n");
     return owner->getAddrRanges();
 }
 AddrRangeList SimpleDRAM::getAddrRanges() const
 {
     DPRINTF(SimpleDRAM, "Sending new ranges\n");
-    // Just use the same ranges as whatever is on the memory side.
     return ranges;
 }
 
@@ -80,3 +96,4 @@ void SimpleDRAM::handleTiming(PacketPtr pkt)
     panic("handleTiming UNIMPL");
 }
 }//namespace gem5
+}

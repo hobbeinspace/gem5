@@ -24,15 +24,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from m5.objects.ClockedObject import ClockedObject
+from m5.objects.AbstractMemory import *
 from m5.params import *
 from m5.proxy import *
 
 
-class SimpleDRAM(ClockedObject):
+class SimpleDRAM(AbstractMemory):
     type = "SimpleDRAM"
     cxx_header = "helloObject/SimpleDRAM.hh"
-    cxx_class = "gem5::SimpleDRAM"
+    cxx_class = "gem5::memory::SimpleDRAM"
 
     # Vector port example. Both the instruction and data ports connect to this
     # port which is automatically split out into two ports.
@@ -41,3 +41,7 @@ class SimpleDRAM(ClockedObject):
     latency = Param.Cycles(1, "Cycles taken on a hit or to resolve a miss")
 
     ranges = VectorParam.AddrRange([], "Ranges that constitute main memory")
+
+    def controller(self):
+        # Simple memory doesn't use a MemCtrl
+        return self

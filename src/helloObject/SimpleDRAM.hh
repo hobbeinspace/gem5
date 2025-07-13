@@ -8,11 +8,12 @@
 
 #include "mem/port.hh"
 #include "params/SimpleDRAM.hh"
-#include "sim/clocked_object.hh"
-
+#include "mem/abstract_mem.hh"
 namespace gem5
 {
-class SimpleDRAM : public ClockedObject
+namespace memory
+{
+class SimpleDRAM : public AbstractMemory
 {
     private:
         class CPUSidePort : public ResponsePort
@@ -51,7 +52,6 @@ class SimpleDRAM : public ClockedObject
         void accessTiming(PacketPtr pkt);
         bool accessFunctional(PacketPtr pkt);
         void insert(PacketPtr pkt);
-
         const Cycles latency;
         std::unordered_map<Addr, uint8_t*> DRAMStore;
 
@@ -62,8 +62,11 @@ class SimpleDRAM : public ClockedObject
         SimpleDRAM(const SimpleDRAMParams& params);
         Port &getPort(const std::string &if_name,
                   PortID idx=InvalidPortID) override;
+        DrainState drain() override;        
+        void init() override;
 };
 
+}
 }
 
 #endif // __LEARNING_GEM5_SIMPLE_DRAM_SIMPLE_DRAM_HH__
