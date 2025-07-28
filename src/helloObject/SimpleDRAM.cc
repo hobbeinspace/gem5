@@ -89,11 +89,56 @@ void SimpleDRAM::CPUSidePort::sendPacket(PacketPtr pkt)
 }
 void SimpleDRAM::handleFunctional(PacketPtr pkt)
 {
-    panic("handleFunctional UNIMPL");
+    //DPRINTF(SimpleDRAM,"handleFunctional called with pkt %s\n", pkt->print());
+    accessFunctional(pkt);
 }
 void SimpleDRAM::handleTiming(PacketPtr pkt)
 {
     panic("handleTiming UNIMPL");
+}
+void SimpleDRAM::accessFunctional(PacketPtr pkt){
+    Addr addr= pkt->getAddr();
+    if(pkt->isRead()){
+        DPRINTF(SimpleDRAM, "functional read\n");
+        auto it = DRAMStore.find(addr);
+        if(it==DRAMStore.end()){
+            panic("Address %x not found in DRAMStore", addr);
+        }
+        pkt->setData(it->second);        
+        pkt->makeResponse();
+        
+        DPRINTF(SimpleDRAM, "readdone\n");
+    }
+    else if(pkt->isWrite()){
+        
+        DPRINTF(SimpleDRAM, "functional write\n");
+        auto it = DRAMStore.find(addr);
+        if(it == DRAMStore.end()){
+            //TODO:: capacity check
+            DPRINTF(SimpleDRAM, "Address %x not found in DRAMStore, inserting new data\n",addr);
+            uint8_t *data=new uint8_t;
+
+            DPRINTF(SimpleDRAM, "here0\n");
+            DRAMStore[addr]=data;
+            DPRINTF(SimpleDRAM, "here1\n");
+
+            pkt->writeData(data);
+            DPRINTF(SimpleDRAM, "here2\n");
+            pkt->makeResponse();
+            DPRINTF(SimpleDRAM, "here3\n");
+        }
+        else{
+            DPRINTF(SimpleDRAM, "Address %x found in DRAMStore data\n",addr);
+
+            pkt->writeData(it->second);
+            pkt->makeResponse();
+        }
+        
+        DPRINTF(SimpleDRAM, "writedone\n");
+    }
+    else{
+        panic("Unknown packet type in SimpleDRAM::handleFunctional");
+    }
 }
 }//namespace gem5
 }
