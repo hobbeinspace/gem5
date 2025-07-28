@@ -50,7 +50,7 @@ class SimpleDRAM : public AbstractMemory
 
         void processEvent();
         void accessTiming(PacketPtr pkt);
-        bool accessFunctional(PacketPtr pkt);
+        void accessFunctional(PacketPtr pkt);
         void insert(PacketPtr pkt);
         const Cycles latency;
         std::unordered_map<Addr, uint8_t*> DRAMStore;
