@@ -114,9 +114,10 @@ void SimpleDRAM::accessFunctional(PacketPtr pkt){
         DPRINTF(SimpleDRAM, "functional write\n");
         auto it = DRAMStore.find(addr);
         if(it == DRAMStore.end()){
+            DPRINTF(SimpleDRAM, "herepp\n");
             //TODO:: capacity check
-            DPRINTF(SimpleDRAM, "Address %x not found in DRAMStore, inserting new data\n",addr);
-            uint8_t *data=new uint8_t;
+            uint8_t* data = new uint8_t[pkt->getSize()];
+            DPRINTF(SimpleDRAM, "Address %x not found in DRAMStore, inserting new data with size %d\n",addr,pkt->getSize());
 
             DPRINTF(SimpleDRAM, "here0\n");
             DRAMStore[addr]=data;
