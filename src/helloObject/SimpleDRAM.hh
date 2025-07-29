@@ -54,7 +54,7 @@ class SimpleDRAM : public AbstractMemory
         void insert(PacketPtr pkt);
         const Cycles latency;
         std::unordered_map<Addr, uint8_t*> DRAMStore;
-
+        uint8_t* pmemAddr;
     protected:
 
         AddrRangeList ranges;

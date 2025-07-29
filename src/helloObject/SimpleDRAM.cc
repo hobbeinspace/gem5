@@ -34,6 +34,7 @@ SimpleDRAM::init(){
     if (cpuPort.isConnected()) {
         cpuPort.sendRangeChange();
     }
+    setBackingStore(pmemAddr);
 }
 Port & SimpleDRAM::getPort(const std::string &if_name, PortID idx)
 {
@@ -87,6 +88,10 @@ void SimpleDRAM::CPUSidePort::sendPacket(PacketPtr pkt)
         blockedPacket = pkt;
     }
 }
+void SimpleDRAM::sendResponse(PacketPtr pkt){
+    DPRINTF(SimpleDRAM, "Sending response %s\n", pkt->print());
+    cpuPort.sendPacket(pkt);
+}
 void SimpleDRAM::handleFunctional(PacketPtr pkt)
 {
     //DPRINTF(SimpleDRAM,"handleFunctional called with pkt %s\n", pkt->print());
@@ -94,7 +99,9 @@ void SimpleDRAM::handleFunctional(PacketPtr pkt)
 }
 void SimpleDRAM::handleTiming(PacketPtr pkt)
 {
-    panic("handleTiming UNIMPL");
+        schedule(new EventFunctionWrapper([this, pkt]{ accessTiming(pkt); },
+                                      name() + ".accessEvent", true),
+             clockEdge(latency));
 }
 void SimpleDRAM::accessFunctional(PacketPtr pkt){
     Addr addr= pkt->getAddr();
@@ -114,19 +121,15 @@ void SimpleDRAM::accessFunctional(PacketPtr pkt){
         DPRINTF(SimpleDRAM, "functional write\n");
         auto it = DRAMStore.find(addr);
         if(it == DRAMStore.end()){
-            DPRINTF(SimpleDRAM, "herepp\n");
             //TODO:: capacity check
-            uint8_t* data = new uint8_t[pkt->getSize()];
+            for(int i=0;i<pkt->getSize();i++){
+                uint8_t* data = new uint8_t;
+                DRAMStore[addr+8*i]=data;
+            }
             DPRINTF(SimpleDRAM, "Address %x not found in DRAMStore, inserting new data with size %d\n",addr,pkt->getSize());
 
-            DPRINTF(SimpleDRAM, "here0\n");
-            DRAMStore[addr]=data;
-            DPRINTF(SimpleDRAM, "here1\n");
-
             pkt->writeData(data);
-            DPRINTF(SimpleDRAM, "here2\n");
             pkt->makeResponse();
-            DPRINTF(SimpleDRAM, "here3\n");
         }
         else{
             DPRINTF(SimpleDRAM, "Address %x found in DRAMStore data\n",addr);
@@ -140,6 +143,10 @@ void SimpleDRAM::accessFunctional(PacketPtr pkt){
     else{
         panic("Unknown packet type in SimpleDRAM::handleFunctional");
     }
+}
+void SimpleDRAM::accessTiming(PacketPtr pkt){
+    accessFunctional(pkt);
+    sendResponse(pkt);
 }
 }//namespace gem5
 }

@@ -192,21 +192,35 @@ DRAMSim2::recvTimingReq(PacketPtr pkt)
     if (retryReq)
         return false;
 
+    //DRAMSim2 does not support transactions larger than one byte
+    //so, if the packet is larger than one byte, we need to split it into multiple DRAMSim2 transactions
+
+    int nbrTx=pkt->getSize(); //in bytes
+
     // if we cannot accept we need to send a retry once progress can
     // be made
-    bool can_accept = nbrOutstanding() < wrapper.queueSize();
+    bool can_accept = nbrOutstanding() +nbrTx <= wrapper.queueSize();
 
     // keep track of the transaction
-    if (pkt->isRead()) {
-        if (can_accept) {
-            outstandingReads[pkt->getAddr()].push(pkt);
 
-            // we count a transaction as outstanding until it has left the
-            // queue in the controller, and the response has been sent
-            // back, note that this will differ for reads and writes
-            ++nbrOutstandingReads;
+
+    if (pkt->isRead()) {
+
+        if (can_accept)
+        {
+            for (int i = 0; i < nbrTx; i++)
+            {
+
+                outstandingReads[pkt->getAddr()].push(pkt);
+
+                // we count a transaction as outstanding until it has left the
+                // queue in the controller, and the response has been sent
+                // back, note that this will differ for reads and writes
+                ++nbrOutstandingReads;
+            }
         }
     } else if (pkt->isWrite()) {
+        //TODO TODO TODO
         if (can_accept) {
             outstandingWrites[pkt->getAddr()].push(pkt);
 
@@ -226,12 +240,15 @@ DRAMSim2::recvTimingReq(PacketPtr pkt)
         // and there isn't
         assert(wrapper.canAccept());
 
-        DPRINTF(DRAMSim2, "Enqueueing address %lld\n", pkt->getAddr());
+        for (int i = 0; i < nbrTx; i++)
+        {
+            DPRINTF(DRAMSim2, "Enqueueing address %lld, size %d\n", pkt->getAddr(), pkt->getSize());
 
-        // @todo what about the granularity here, implicit assumption that
-        // a transaction matches the burst size of the memory (which we
-        // cannot determine without parsing the ini file ourselves)
-        wrapper.enqueue(pkt->isWrite(), pkt->getAddr());
+            // @todo what about the granularity here, implicit assumption that
+            // a transaction matches the burst size of the memory (which we
+            // cannot determine without parsing the ini file ourselves)
+            wrapper.enqueue(pkt->isWrite(), pkt->getAddr()+8*i);
+        }
 
         return true;
     } else {

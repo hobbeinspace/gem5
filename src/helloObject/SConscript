@@ -27,11 +27,11 @@
 
 Import('*')
 
-SimObject('SimpleDRAM.py', sim_objects=['SimpleDRAM'])
+#SimObject('SimpleDRAM.py', sim_objects=['SimpleDRAM'])
 SimObject('SimpleCache.py', sim_objects=['SimpleCache'])
 
-Source('SimpleDRAM.cc')
+#Source('SimpleDRAM.cc')
 Source('SimpleCache.cc')
 
-DebugFlag('SimpleDRAM', "For Learning gem5 Part 2.")
+#DebugFlag('SimpleDRAM', "For Learning gem5 Part 2.")
 DebugFlag('SimpleCache', "For Learning gem5 Part 2.")

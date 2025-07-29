@@ -76,9 +76,11 @@ system.cpu.interrupts[0].int_requestor = system.membus.cpu_side_ports
 system.cpu.interrupts[0].int_responder = system.membus.mem_side_ports
 
 # Create a DDR3 memory controller and connect it to the membus
-system.dramtest = SimpleDRAM()
-system.dramtest.ranges = [AddrRange("256MB")]
-system.dramtest.cpu_side = system.membus.mem_side_ports
+
+system.dram=DRAMSim2()
+system.dram.port=system.membus.mem_side_ports
+system.dram.deviceConfigFile = "ini/DDR3_micron_16M_8B_x8_sg15.ini"
+
 
 
 # system.mem_ctrl = MemCtrl()
