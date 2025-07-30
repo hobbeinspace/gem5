@@ -119,6 +119,7 @@ class DRAMSim2 : public AbstractMemory
      * DRAMSim.
      */
     std::unordered_map<Addr, std::queue<PacketPtr> > outstandingReads;
+
     std::unordered_map<Addr, std::queue<PacketPtr> > outstandingWrites;
 
     /**
@@ -169,6 +170,8 @@ class DRAMSim2 : public AbstractMemory
      * hold it for deletion until a subsequent call
      */
     std::unique_ptr<Packet> pendingDelete;
+
+
 
   public:
 

@@ -192,14 +192,18 @@ DRAMSim2::recvTimingReq(PacketPtr pkt)
     if (retryReq)
         return false;
 
-    //DRAMSim2 does not support transactions larger than one byte
-    //so, if the packet is larger than one byte, we need to split it into multiple DRAMSim2 transactions
+    //DRAMSim2 transaction size= JEDEC_DATA_BUS_BITS / 8 * BL (in bytes)
+    //this info is burstSize() in the wrapper
 
-    int nbrTx=pkt->getSize(); //in bytes
+    int nbrTx=pkt->getSize()/wrapper.burstSize();
+    if(nbrTx>1)
+        panic("It happened");
 
     // if we cannot accept we need to send a retry once progress can
     // be made
     bool can_accept = nbrOutstanding() +nbrTx <= wrapper.queueSize();
+    DPRINTF(DRAMSim2, "Received packet for address %lld, size %d can_accept=%d nbrOutstanding=%d, wrapper.queuesize=%d\n",
+            pkt->getAddr(), pkt->getSize(),can_accept,nbrOutstanding(),wrapper.queueSize());
 
     // keep track of the transaction
 
@@ -210,11 +214,9 @@ DRAMSim2::recvTimingReq(PacketPtr pkt)
         {
             for (int i = 0; i < nbrTx; i++)
             {
-
                 outstandingReads[pkt->getAddr()].push(pkt);
-
                 // we count a transaction as outstanding until it has left the
-                // queue in the controller, and the response has been sent
+                // queue in the controller, and the response has been sentt
                 // back, note that this will differ for reads and writes
                 ++nbrOutstandingReads;
             }
@@ -328,6 +330,17 @@ void DRAMSim2::readComplete(unsigned id, uint64_t addr, uint64_t cycle)
     assert(nbrOutstandingReads != 0);
     --nbrOutstandingReads;
 
+    if (!p->second.empty())
+    {
+        for (auto i = p->second.front(); i <= p->second.back(); i++)
+        {
+            if (pkt->id == i->id)
+            {
+                return;
+                // do not proceed to accessAndRespond if there are more read responses outstanding in DRAMSim2
+            }
+        }
+    }
     // perform the actual memory access
     accessAndRespond(pkt);
 }
