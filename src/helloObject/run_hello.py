@@ -95,7 +95,7 @@ system.system_port = system.membus.cpu_side_ports
 process = Process()
 # Set the command
 # cmd is a list which begins with the executable (like argv)
-binpath = "tests/test-progs/hello/bin/x86/linux/hello"
+binpath = "tests/test-progs/matrix-multiply/matrix-multiply"
 system.workload = SEWorkload.init_compatible(binpath)
 
 process.cmd = [binpath]

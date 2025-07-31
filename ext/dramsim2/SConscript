@@ -38,7 +38,7 @@
 
 import os
 
-Import('env')
+Import('*')
 
 # See if we got a cloned DRAMSim2 repo as a subdirectory and set the
 # HAVE_DRAMSIM flag accordingly
@@ -48,7 +48,6 @@ if not os.path.exists(Dir('.').srcnode().abspath + '/DRAMSim2'):
 
 # We have got the folder, so add the library and build the wrappers
 env['HAVE_DRAMSIM'] = True
-
 # Add the appropriate files. We leave out the trace driven simulator
 dram_files = []
 

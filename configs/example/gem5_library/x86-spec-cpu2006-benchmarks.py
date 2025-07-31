@@ -204,7 +204,9 @@ cache_hierarchy = MESITwoLevelCacheHierarchy(
 # Memory: Dual Channel DDR4 2400 DRAM device.
 # The X86 board only supports 3 GiB of main memory.
 
-memory = DualChannelDDR4_2400(size="3GiB")
+memory = DRAMSim2()
+memory.deviceConfigFile = "ini/DDR3_micron_16M_8B_x8_sg15.ini"
+
 
 # Here we setup the processor. This is a special switchable processor in which
 # a starting core type and a switch core type must be specified. Once a
