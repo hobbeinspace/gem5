@@ -30,7 +30,7 @@
 
 int main()
 {
-    const int size = 50;
+    const int size = 100;
     int first[size][size], second[size][size], multiply[size][size];
 
     printf("Populating the first and second matrix...\n");

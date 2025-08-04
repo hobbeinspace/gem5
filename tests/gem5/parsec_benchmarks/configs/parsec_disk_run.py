@@ -38,8 +38,8 @@ Notes
 import argparse
 import time
 
-import m5.stats
-
+import m5
+from m5.objects import *
 from gem5.components.boards.x86_board import X86Board
 from gem5.components.memory import SingleChannelDDR3_1600
 from gem5.components.processors.cpu_types import (
@@ -168,8 +168,13 @@ elif args.mem_system == "mesi_two_level":
         num_l2_banks=1,
     )
 
-# Setup the memory system.
-memory = SingleChannelDDR3_1600(size="3GiB")
+# # Setup the memory system.
+# memory = SingleChannelDDR3_1600(size="3GiB")
+memory=DRAMSim2()
+memory.port=system.membus.mem_side_ports
+memory.deviceConfigFile = "ini/DDR3_micron_16M_8B_x8_sg15.ini"
+
+
 
 roi_type = get_cpu_type_from_str(args.cpu)
 if args.boot_cpu != None:

@@ -47,7 +47,7 @@ from m5.objects import *
 m5.util.addToPath("../../")
 
 # import the caches which we made
-from cache1 import *
+from caches import *
 
 # import the SimpleOpts module
 from common import SimpleOpts
@@ -55,6 +55,11 @@ from common import SimpleOpts
 # Default to running 'hello', use the compiled ISA to find the binary
 # grab the specific path to the binary
 thispath = os.path.dirname(os.path.realpath(__file__))
+# default_binary = os.path.join(
+#     thispath,
+#     "../../../",
+#     "tests/test-progs/matrix-multiply/matrix-multiply",
+# )
 default_binary = os.path.join(
     thispath,
     "../../../",
@@ -117,10 +122,15 @@ system.cpu.interrupts[0].int_responder = system.membus.mem_side_ports
 system.system_port = system.membus.cpu_side_ports
 
 # Create a DDR3 memory controller
-system.mem_ctrl = MemCtrl()
-system.mem_ctrl.dram = DDR3_1600_8x8()
-system.mem_ctrl.dram.range = system.mem_ranges[0]
-system.mem_ctrl.port = system.membus.mem_side_ports
+# system.mem_ctrl = MemCtrl()
+# system.mem_ctrl.dram = DDR3_1600_8x8()
+# system.mem_ctrl.dram.range = system.mem_ranges[0]
+# system.mem_ctrl.port = system.membus.mem_side_ports
+system.dram=DRAMSim2()
+system.dram.port=system.membus.mem_side_ports
+system.dram.deviceConfigFile = "ini/DDR3_micron_16M_8B_x8_sg15.ini"
+
+
 
 system.workload = SEWorkload.init_compatible(args.binary)
 

@@ -51,7 +51,7 @@ system.mem_mode = "timing"  # Use timing accesses
 system.mem_ranges = [AddrRange("1MB")]  # Create an address range
 
 # Create a simple CPU
-system.cpu = O3CPU()
+system.cpu = TimingSimpleCPU()
 
 # Create a memory bus, a coherent crossbar, in this case
 system.membus = SystemXBar()
@@ -96,6 +96,8 @@ process = Process()
 # Set the command
 # cmd is a list which begins with the executable (like argv)
 binpath = "tests/test-progs/matrix-multiply/matrix-multiply"
+# binpath = "tests/dhrystone/dhrystone"
+# binpath = "tests/test-progs/hello/bin/x86/linux/hello"
 system.workload = SEWorkload.init_compatible(binpath)
 
 process.cmd = [binpath]
