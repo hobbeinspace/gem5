@@ -55,17 +55,16 @@ from common import SimpleOpts
 # Default to running 'hello', use the compiled ISA to find the binary
 # grab the specific path to the binary
 thispath = os.path.dirname(os.path.realpath(__file__))
-# default_binary = os.path.join(
-#     thispath,
-#     "../../../",
-#     "tests/test-progs/matrix-multiply/matrix-multiply",
-# )
 default_binary = os.path.join(
     thispath,
     "../../../",
     "tests/test-progs/hello/bin/x86/linux/hello",
 )
-
+# default_binary = os.path.join(
+#     thispath,
+#     "../../../../",
+#     "cs251a-microbench/spmv",
+# )
 # Binary to execute
 SimpleOpts.add_option("binary", nargs="?", default=default_binary)
 
@@ -77,7 +76,7 @@ system = System()
 
 # Set the clock frequency of the system (and all of its children)
 system.clk_domain = SrcClockDomain()
-system.clk_domain.clock = "1GHz"
+system.clk_domain.clock = "4GHz"
 system.clk_domain.voltage_domain = VoltageDomain()
 
 # Set up the system
@@ -85,7 +84,7 @@ system.mem_mode = "timing"  # Use timing accesses
 system.mem_ranges = [AddrRange("512MiB")]  # Create an address range
 
 # Create a simple CPU
-system.cpu = X86TimingSimpleCPU()
+system.cpu = TimingSimpleCPU()
 
 # Create an L1 instruction and data cache
 system.cpu.icache = L1ICache(args)

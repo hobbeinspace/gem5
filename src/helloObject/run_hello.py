@@ -43,7 +43,7 @@ system = System()
 
 # Set the clock fequency of the system (and all of its children)
 system.clk_domain = SrcClockDomain()
-system.clk_domain.clock = "1GHz"
+system.clk_domain.clock = "4GHz"
 system.clk_domain.voltage_domain = VoltageDomain()
 
 # Set up the system
@@ -57,16 +57,16 @@ system.cpu = TimingSimpleCPU()
 system.membus = SystemXBar()
 
 # Create a simple cache
-system.cache = SimpleCache(size="4kB")
+system.cache = SimpleCache(size="1kB")
 
 
-# Connect the I and D cache ports of the CPU to the memobj.
-# Since cpu_side is a vector port, each time one of these is connected, it will
-# create a new instance of the CPUSidePort class
+# # Connect the I and D cache ports of the CPU to the memobj.
+# # Since cpu_side is a vector port, each time one of these is connected, it will
+# # create a new instance of the CPUSidePort class
 system.cpu.icache_port = system.cache.cpu_side
 system.cpu.dcache_port = system.cache.cpu_side
 
-# Hook the cache up to the memory bus
+# # Hook the cache up to the memory bus
 system.cache.mem_side = system.membus.cpu_side_ports
 
 # create the interrupt controller for the CPU and connect to the membus
@@ -80,6 +80,9 @@ system.cpu.interrupts[0].int_responder = system.membus.mem_side_ports
 system.dram=DRAMSim2()
 system.dram.port=system.membus.mem_side_ports
 system.dram.deviceConfigFile = "ini/DDR3_micron_16M_8B_x8_sg15.ini"
+
+# system.cpu.icache_port = system.membus.cpu_side_ports
+# system.cpu.dcache_port = system.membus.cpu_side_ports
 
 
 
@@ -95,9 +98,9 @@ system.system_port = system.membus.cpu_side_ports
 process = Process()
 # Set the command
 # cmd is a list which begins with the executable (like argv)
-binpath = "tests/test-progs/matrix-multiply/matrix-multiply"
+# binpath = "tests/test-progs/matrix-multiply/matrix-multiply"
 # binpath = "tests/dhrystone/dhrystone"
-# binpath = "tests/test-progs/hello/bin/x86/linux/hello"
+binpath = "tests/test-progs/hello/bin/x86/linux/hello"
 system.workload = SEWorkload.init_compatible(binpath)
 
 process.cmd = [binpath]
