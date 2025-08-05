@@ -35,6 +35,6 @@ for i in range(10):  # Number of times to run
 
 if rates:
     avg = sum(rates) / len(rates)
-    print(f"Average hostInstRate: {avg:.6f}")
+    print(f"Average IPC: {avg:.6f}")
 else:
     print("No hostInstRate values found.")
