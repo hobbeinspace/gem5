@@ -19,7 +19,7 @@ def extract_hostInstRate(stats_file):
     return None
 
 rates = []
-for i in range(10):  # Number of times to run
+for i in range(5):  # Number of times to run
     result = subprocess.run(command, capture_output=True, text=True)
     output = result.stdout
     print(output)
