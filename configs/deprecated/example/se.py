@@ -184,6 +184,9 @@ if args.smt and args.num_cpus > 1:
     fatal("You cannot use SMT with multiple CPUs!")
 
 np = args.num_cpus
+print("NP=" + str(np))
+print("numThreads=" + str(numThreads))
+print("multiprocesses=" + str(len(multiprocesses)))
 mp0_path = multiprocesses[0].executable
 system = System(
     cpu=[CPUClass(cpu_id=i) for i in range(np)],

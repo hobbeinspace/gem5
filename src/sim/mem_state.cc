@@ -444,6 +444,21 @@ MemState::fixupFault(Addr vaddr)
         }
         return true;
     }
+    if (vaddr > _stackBase)
+    {
+        while (vaddr > _stackBase)
+        {
+            DPRINTF(Vma, "warning: inversely increase stack base %0#x to avoid addr %0#x assert.",
+                     +vaddr, _stackBase, _stackBase);
+            _stackBase += _pageBytes;
+            _maxStackSize += _pageBytes;
+            _ownerProcess->allocateMem(_stackBase, _pageBytes);
+            inform("Increasing stack size by one page.");
+            
+        }
+        return true;
+        
+    }
 
     return false;
 }

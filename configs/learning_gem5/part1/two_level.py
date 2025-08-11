@@ -60,22 +60,20 @@ thispath = os.path.dirname(os.path.realpath(__file__))
 #     "../../../",
 #     "tests/test-progs/hello/bin/x86/linux/hello",
 # )
-default_binary = os.path.join(
-    thispath,
-    "../../../../",
-    "cs251a-microbench/spmv",
-)
 # default_binary = os.path.join(
 #     thispath,
-#     "../../../../../",
-#     "Downloads/cpu2017-1.1.0/benchspec/CPU/619.lbm_s/build/build_base_mytest-m64.0000/lbm_s",
+#     "../../../../",
+#     "cs251a-microbench/spmv",
 # )
-# default_option="reference.dat 0 0 200_200_260_ldc.of"
+default_binary = os.path.join(
+    "../../build/build_base_mytest-m64.0000/lbm_r",
+)
+default_option="3000 reference.dat 0 0 100_100_130_ldc.of"
 
 # Binary to execute
-SimpleOpts.add_option("binary", nargs="?", default=default_binary)
-
-# SimpleOpts.add_option("options", nargs="?", default=default_option)
+SimpleOpts.add_option("--binary", nargs="?", default=default_binary)
+SimpleOpts.add_option("--maxtime",nargs="?", default="0.1") #100ms
+SimpleOpts.add_option("--options", nargs="?", default=default_option)
 # Finalize the arguments and grab the args so we can pass it on to our objects
 args = SimpleOpts.parse_args()
 
@@ -89,7 +87,7 @@ system.clk_domain.voltage_domain = VoltageDomain()
 
 # Set up the system
 system.mem_mode = "timing"  # Use timing accesses
-system.mem_ranges = [AddrRange("512MB")]  # Create an address range
+system.mem_ranges = [AddrRange("8GB")]  # Create an address range
 
 # Create a simple CPU
 system.cpu = O3CPU()
@@ -130,22 +128,30 @@ system.system_port = system.membus.cpu_side_ports
 # Create a DDR3 memory controller
 system.mem_ctrl = Ramulator2()
 system.mem_ctrl.port = system.membus.mem_side_ports
-system.mem_ctrl.config_path = "ext/ramulator2/example_config.yaml"
+system.mem_ctrl.config_path = "/home/wonjaechoi/gem5/gem5/ext/ramulator2/example_config.yaml"
 # system.dram=DRAMSim2()
 # system.dram.port=system.membus.mem_side_ports
 # system.dram.deviceConfigFile = "ini/DDR3_micron_16M_8B_x8_sg15.ini"
-# system.mem_ctrl = MemCtrl()
-# system.mem_ctrl.dram = DDR3_1600_8x8()
-# system.mem_ctrl.dram.range = system.mem_ranges[0]
-# system.mem_ctrl.port = system.membus.mem_side_ports
+# system.mem_ctrls = MemCtrl()
+# system.mem_ctrls.dram = DDR5_8400_4x8()
+# system.mem_ctrls.dram.range = AddrRange("8GB")
+# system.mem_ctrls.port = system.membus.mem_side_ports
+
+# system.kvm_vm = KvmVM()
+# system.m5ops_base = max(0xFFFF0000, system.mem_ranges[0].size())
+
 
 system.workload = SEWorkload.init_compatible(args.binary)
 
 # Create a process for a simple "Hello World" application
 process = Process()
+# process.useArchPT = True
+# process.kvmInSE = True
 # Set the command
 # cmd is a list which begins with the executable (like argv)
-process.cmd = [args.binary]  # + args.options.split()
+process.cmd = [args.binary]  + args.options.split()
+# process.maxStackSize = "1MB"  # Set the maximum stack size
+process.env = {"OMP_NUM_THREADS": "1"}
 # Set the cpu to use the process as its workload and create thread contexts
 system.cpu.workload = process
 system.cpu.createThreads()
@@ -154,7 +160,10 @@ system.cpu.createThreads()
 root = Root(full_system=False, system=system)
 # instantiate all of the objects we've created above
 m5.instantiate()
+if(type(args.maxtime)==str):
+    args.maxtime = float(args.maxtime)
 
 print(f"Beginning simulation!")
-exit_event = m5.simulate()
+print(f"maxticks= {m5.ticks.fromSeconds(args.maxtime)}")
+exit_event = m5.simulate(m5.ticks.fromSeconds(args.maxtime))
 print(f"Exiting @ tick {m5.curTick()} because {exit_event.getCause()}")
