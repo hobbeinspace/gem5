@@ -66,6 +66,9 @@ AbstractMemory::AbstractMemory(const Params &p) :
     kvmMap(p.kvm_map), writeable(p.writeable), collectStats(p.collect_stats),
     _system(NULL), stats(*this)
 {
+
+
+    DPRINTF(LLSC, "addr range = %s\n",range.to_string());
     panic_if(!range.valid() || !range.size(),
              "Memory range %s must be valid with non-zero size.",
              range.to_string());
@@ -100,6 +103,7 @@ AbstractMemory::initState()
                     system()->cacheLineSize());
 
     panic_if(!image.write(proxy), "%s: Unable to write image.");
+
 }
 
 void

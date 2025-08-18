@@ -55,19 +55,19 @@ from common import SimpleOpts
 # Default to running 'hello', use the compiled ISA to find the binary
 # grab the specific path to the binary
 thispath = os.path.dirname(os.path.realpath(__file__))
-# default_binary = os.path.join(
-#     thispath,
-#     "../../../",
-#     "tests/test-progs/hello/bin/x86/linux/hello",
-# )
+default_binary = os.path.join(
+    thispath,
+    "../../../",
+    "tests/test-progs/hello/bin/x86/linux/hello",
+)
 # default_binary = os.path.join(
 #     thispath,
 #     "../../../../",
 #     "cs251a-microbench/spmv",
 # )
-default_binary = os.path.join(
-    "../../build/build_base_mytest-m64.0000/lbm_r",
-)
+# default_binary = os.path.join(
+#     "../../build/build_base_mytest-m64.0000/lbm_r",
+# )
 default_option="3000 reference.dat 0 0 100_100_130_ldc.of"
 
 # Binary to execute
@@ -87,10 +87,10 @@ system.clk_domain.voltage_domain = VoltageDomain()
 
 # Set up the system
 system.mem_mode = "timing"  # Use timing accesses
-system.mem_ranges = [AddrRange("8GB")]  # Create an address range
+system.mem_ranges = [AddrRange("8GB")] # Match this value with DRAM capacity specified in the RAMULATOR2 config file
 
 # Create a simple CPU
-system.cpu = O3CPU()
+system.cpu = X86TimingSimpleCPU()
 # Create an L1 instruction and data cache
 system.cpu.icache = L1ICache(args)
 system.cpu.dcache = L1DCache(args)
@@ -129,6 +129,7 @@ system.system_port = system.membus.cpu_side_ports
 system.mem_ctrl = Ramulator2()
 system.mem_ctrl.port = system.membus.mem_side_ports
 system.mem_ctrl.config_path = "/home/wonjaechoi/gem5/gem5/ext/ramulator2/example_config.yaml"
+system.mem_ctrl.range= system.mem_ranges[0]  # Match this value with DRAM capacity specified in the RAMULATOR2 config file
 # system.dram=DRAMSim2()
 # system.dram.port=system.membus.mem_side_ports
 # system.dram.deviceConfigFile = "ini/DDR3_micron_16M_8B_x8_sg15.ini"
@@ -165,5 +166,7 @@ if(type(args.maxtime)==str):
 
 print(f"Beginning simulation!")
 print(f"maxticks= {m5.ticks.fromSeconds(args.maxtime)}")
-exit_event = m5.simulate(m5.ticks.fromSeconds(args.maxtime))
+m5.scheduleTickExitAbsolute(m5.ticks.fromSeconds(args.maxtime))
+exit_event = m5.simulate()
+
 print(f"Exiting @ tick {m5.curTick()} because {exit_event.getCause()}")

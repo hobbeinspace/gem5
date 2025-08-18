@@ -11,4 +11,4 @@ class Ramulator2(AbstractMemory):
   #config_path = Param.String("Path to the DRAMSys configuration")
   config_path = Param.String("", "--ramulator-config")
   output_dir = Param.String("", "--outdir")
-  
+  # range=Param.AddrRange("8GB", "Address range for ramulator. match this value with DRAM capacity specified in the RAMULATOR2 config file")

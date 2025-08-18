@@ -83,7 +83,7 @@ class ExitEvent(Enum):
         elif exit_string == "exiting with last active thread context":
             return ExitEvent.EXIT
         elif exit_string == "simulate() limit reached":
-            return ExitEvent.MAX_TICK
+            return ExitEvent.EXIT
         elif exit_string == "Tick exit reached":
             return ExitEvent.SCHEDULED_TICK
         elif exit_string == "switchcpu":
