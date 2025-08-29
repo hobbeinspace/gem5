@@ -12,47 +12,25 @@ CONFIG_SCRIPT = os.path.join(GEM5_DIR, "configs/deprecated/example/se.py")
 
 # Benchmarks to run (SPECspeed versions)
 benchmarks = [
-    "500.perlbench_r",
-    "502.gcc_r",
-    "505.mcf_r",
-    "520.omnetpp_r",
-    "523.xalancbmk_r",
-    "525.x264_r",
-    "531.deepsjeng_r",
-    "541.leela_r",
-    "548.exchange2_r", 
-    "557.xz_r",
-    "503.bwaves_r",
-    "507.cactuBSSN_r",
-    "508.namd_r",
-    "510.parest_r",
-    "511.povray_r",
-    "519.lbm_r",
-    "521.wrf_r",
-    "526.blender_r",
-    "527.cam4_r",
+    "600.perlbench_s",
+    "602.gcc_s",
+    "605.mcf_s", 
+    "620.omnetpp_s",
+    "623.xalancbmk_s",
+    "625.x264_s",
+    "631.deepsjeng_s",
+    "607.cactuBSSN_s"
 ]
 
 names = [
-    "perlbench_r",
-    "cpugcc_r",
-    "mcf_r",
-    "omnetpp_r",
-    "cpuxalan_r",
-    "x264_r",
-    "deepsjeng_r",
-    "leela_r",
-    "exchange2_r",
-    "xz_r",
-    "bwaves_r",
-    "cactusBSSN_r",
-    "namd_r",
-    "parest_r",
-    "povray_r",
-    "lbm_r",
-    "wrf_r",
-    "blender_r",
-    "cam4_r",
+    "perlbench_s",
+    "cpugcc_s",
+    "mcf_s",
+    "omnetpp_s",
+    "cpuxalan_s",
+    "x264_s",
+    "deepsjeng_s",
+    "cactuBSSN_s"
 ]
 
 def run_with_spec_env(command, cwd=None):
@@ -66,11 +44,11 @@ def run_with_spec_env(command, cwd=None):
     )
 
 
-# # # # Step 2: Build benchmarks
+# # # Step 2: Build benchmarks
 # for bench in benchmarks:
 #     print(f"=== Building {bench} ===")
 #     name=bench.split(".")[1]
-#     result = run_with_spec_env(f"runcpu --fake --config=gcc-linux-x86.cfg {name}", cwd=SPEC_DIR)
+#     result = run_with_spec_env(f"runcpu --fake --config=gcc-linux-x86-mt.cfg {name}", cwd=SPEC_DIR)
 #     if result.returncode != 0:
 #         print(f"Error building {bench}:\n{result.stderr}")
 #     else:
@@ -80,13 +58,13 @@ def run_with_spec_env(command, cwd=None):
 # for bench in benchmarks:
 #     print(f"=== Running specmake for {bench} ===")
 #     name=bench.split(".")[1]
-#     if(name=="x264_r" or  name== "povray_r" or  name=="blender_r" or name=="cam4_r" or name=="wrf_r"):
-#         result = run_with_spec_env(f"specmake {name} TARGET={name}", cwd=os.path.join(SPEC_DIR,"benchspec", "CPU", bench,"build","build_base_mytest-m64.0000"))
-        
-#     else:
+#     if(name!="x264_s"):
 #         result = run_with_spec_env(f"specmake", cwd=os.path.join(SPEC_DIR,"benchspec", "CPU", bench,"build","build_base_mytest-m64.0000"))
+
+#     else:
+#         result = run_with_spec_env(f"specmake {name} TARGET={name}", cwd=os.path.join(SPEC_DIR,"benchspec", "CPU", bench,"build","build_base_mytest-m64.0000"))
 #     if result.returncode != 0:
-#         print(f"Error running specmake for {bench}:\n{result.stdout}\n{result.stderr}")
+#         print(f"Error running specmake for {bench}:\n{result.stderr}")
 #     else:
 #         print(f"specmake done for {bench}")
 
@@ -101,7 +79,7 @@ for i,bench in enumerate(benchmarks):
         continue
 
     # Get specinvoke command line
-    result = run_with_spec_env("specinvoke -n", cwd=os.path.join(run_dir_path, "run","run_base_refrate_mytest-m64.0000"))
+    result = run_with_spec_env("specinvoke -n", cwd=os.path.join(run_dir_path, "run","run_base_refspeed_mytest-m64.0000"))
     if result.returncode != 0:
         print(f"Error running specinvoke for {bench}:\n{result.stderr}")
         continue
@@ -118,7 +96,7 @@ for i,bench in enumerate(benchmarks):
     parts=parts[1:]
     name=names[i]
     binary_path = run_dir_path+ "/build/build_base_mytest-m64.0000/"+name
-    run_dir=os.path.join(run_dir_path, "run","run_base_refrate_mytest-m64.0000")
+    run_dir=os.path.join(run_dir_path, "run","run_base_refspeed_mytest-m64.0000")
     #binary_args = " ".join(spec_cmd[1:])
 
     print(f"Running {bench} in gem5...")
@@ -126,18 +104,17 @@ for i,bench in enumerate(benchmarks):
     gem5_cmd = [
         GEM5_BINARY,
         CONFIG_SCRIPT,
-        "--cpu-type=DerivO3CPU",
+        "--cpu-type=X86O3CPU",
         "--num-cpus=4",
         "--mem-type=Ramulator2",
         "--mem-size=16GB",
-        "--fast-forward=1000000000", 
         "--caches",
         "--l2cache",
         "--l1i_size=16kB",
         "--l1d_size=16kB",
         "--l2_size=512kB",
         f"--cmd={binary_path}",
-        # "--maxtime=0.01",
+        "--maxtime=0.01",
         f"--options={options}",
     ]
     print(gem5_cmd)
@@ -145,54 +122,18 @@ for i,bench in enumerate(benchmarks):
 
     # Read IPC from m5out/stats.txt
     stats_file = os.path.join(run_dir, "m5out", "stats.txt")
-    ipc_vals = []
+    ipc_val = None
     with open(stats_file, "r") as f:
         for line in f:
-            match = re.match(r'system\.cpu\d*\.ipc\s+([0-9.]+)', line)
-
+            match = re.match(r'system\.cpu\.ipc\s+([0-9.]+)', line)
             if match:
-                ipc_vals.append(float(match.group(1)))
-                
+                ipc_val = float(match.group(1))
+                break
 
-    if ipc_vals:
-        if len(ipc_vals) == 1:
-            print(f"IPC: {ipc_vals[0]}")
-        else:
-            avg_ipc = sum(ipc_vals) / len(ipc_vals)
-            print(f"Per-core IPC: {ipc_vals}")
-            print(f"Average IPC: {avg_ipc}")
-        ipc_results[bench] = avg_ipc if len(ipc_vals) > 1 else ipc_vals[0]
-    else:
-        print("No IPC values found.")
-
-    break
-    
+    ipc_results[bench] = ipc_val
+    print(f"{bench} ipc: {ipc_val}")
+    exit(0)
 
 print("\n=== ipc Summary ===")
 for bench, ipc in ipc_results.items():
     print(f"{bench}: {ipc}")
-
-output_file = "ipc_results.txt"
-
-# Write IPC results and config file contents
-with open(output_file, "w") as f:
-    f.write("IPC Results:\n")
-    for bench, ipc in ipc_results.items():
-        f.write(f"{bench}: {ipc}\n")
-    f.write("\n--- Contents of the gem5 config file ---\n\n")
-    
-    try:
-        with open(CONFIG_SCRIPT, "r") as two_level_file:
-            f.write(two_level_file.read())
-    except Exception as e:
-        f.write(f"Could not read two_level.py: {e}\n")
-
-    f.write("\n--- Contents of example_config.yaml ---\n\n")
-    config_path = "/gem5/gem5/ext/ramulator2/example_config.yaml"
-    try:
-        with open(config_path, "r") as config_file:
-            f.write(config_file.read())
-    except Exception as e:
-        f.write(f"Could not read config file: {e}\n")
-
-print(f"IPC results and config written to {output_file}")

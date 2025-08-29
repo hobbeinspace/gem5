@@ -72,26 +72,55 @@ from gem5.components.processors.simple_processor import SimpleProcessor
 from gem5.simulate.simulator import Simulator
 from gem5.simulate.exit_event import ExitEvent
 from m5.util import fatal
-# We are using argparse to supply the path to the binary.
 
-cache_hierarchy = PrivateL1PrivateL2CacheHierarchy(
-    l1d_size="16kB",
-    l1i_size="16kB",
+# import the m5 (gem5) library created when gem5 is built
+import m5
+
+# import all of the SimObjects
+from m5.objects import *
+
+# Add the common scripts to our path
+m5.util.addToPath("../../")
+
+# import the SimpleOpts module
+from common import SimpleOpts
+
+# We are using argparse to supply the path to the binary.
+thispath = os.path.dirname(os.path.realpath(__file__))
+default_binary = os.path.join(
+    "../../build/build_base_mytest-m64.0000/lbm_r",
+)
+default_option="3000 reference.dat 0 0 100_100_130_ldc.of"
+
+# Binary to execute
+SimpleOpts.add_option("--binary", nargs="?", default=default_binary)
+SimpleOpts.add_option("--maxtime",nargs="?", default="0.1") #100ms
+SimpleOpts.add_option("--options", nargs="?", default=default_option)
+# Finalize the arguments and grab the args so we can pass it on to our objects
+args = SimpleOpts.parse_args()
+cache_hierarchy = AbstractThreeLevelCacheHierarchy(
+    l1d_size="32kB",
+    l1d_assoc=4,
+    l1i_assoc=4,
+    l1i_size="32kB",
     l2_size="256kB",
+    l2_assoc=8,
+    l3_size="8MB",
+    l3_assoc=8
 )
 
 # Use
-memory = Ramulator2System("ext/ramulator2/example_config.yaml", "ramulator_out", "2GB")
+memory = Ramulator2System("ext/ramulator2/example_config.yaml", "ramulator_out", "16GB")
 
 processor = SimpleProcessor(
-    cpu_type=CPUTypes.TIMING,
+    cpu_type=CPUTypes.O3,
     isa=ISA.X86,
-    num_cores=1
+    num_cores=4
 )
 
 #board = X86Board(
 board = SimpleBoard(
-    clk_freq = "3GHz",
+    clk_freq = "4.2GHz",
     processor = processor,
     memory = memory,
     cache_hierarchy = cache_hierarchy,
@@ -100,16 +129,15 @@ board = SimpleBoard(
 # Set SE mode binary workload
 print("Start setting binary to board")
 board.set_se_binary_workload(
-    CustomResource(
-        os.path.join(
-            os.getcwd(), "../cs251a-microbench/mm"
-        )
-    )
+    binary=args.binary,
+    args=args.options.split()
 )
-
+if(type(args.maxtime)==str):
+    args.maxtime = float(args.maxtime)
 # Lastly we instantiate the simulator module and simulate the program.
 print("set simulator")
 simulator = Simulator(board=board)
+simulator.set_max_tick(m5.ticks.fromSeconds(args.maxtime))
 simulator.run()
 
 # We acknowlwdge the user that the simulation has ended.

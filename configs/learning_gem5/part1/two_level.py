@@ -55,60 +55,77 @@ from common import SimpleOpts
 # Default to running 'hello', use the compiled ISA to find the binary
 # grab the specific path to the binary
 thispath = os.path.dirname(os.path.realpath(__file__))
-default_binary = os.path.join(
-    thispath,
-    "../../../",
-    "tests/test-progs/hello/bin/x86/linux/hello",
-)
+# default_binary = os.path.join(
+#     thispath,
+#     "../../../",
+#     "tests/test-progs/hello/bin/x86/linux/hello",
+# )
 # default_binary = os.path.join(
 #     thispath,
 #     "../../../../",
 #     "cs251a-microbench/spmv",
 # )
-# default_binary = os.path.join(
-#     "../../build/build_base_mytest-m64.0000/lbm_r",
-# )
+default_binary = os.path.join(
+    "../../build/build_base_mytest-m64.0000/lbm_r",
+)
 default_option="3000 reference.dat 0 0 100_100_130_ldc.of"
 
 # Binary to execute
-SimpleOpts.add_option("--binary", nargs="?", default=default_binary)
+SimpleOpts.add_option("--cmd", nargs="?", default=default_binary)
 SimpleOpts.add_option("--maxtime",nargs="?", default="0.1") #100ms
 SimpleOpts.add_option("--options", nargs="?", default=default_option)
+SimpleOpts.add_option("--num-cpus", nargs="?", default=4)
 # Finalize the arguments and grab the args so we can pass it on to our objects
 args = SimpleOpts.parse_args()
-
+num_cpus = int(args.num_cpus)
 # create the system we are going to simulate
 system = System()
 
 # Set the clock frequency of the system (and all of its children)
 system.clk_domain = SrcClockDomain()
-system.clk_domain.clock = "4GHz"
+system.clk_domain.clock = "4.2GHz"
 system.clk_domain.voltage_domain = VoltageDomain()
 
 # Set up the system
 system.mem_mode = "timing"  # Use timing accesses
-system.mem_ranges = [AddrRange("8GB")] # Match this value with DRAM capacity specified in the RAMULATOR2 config file
+system.mem_ranges = [AddrRange("16GB")] # Match this value with DRAM capacity specified in the RAMULATOR2 config file
 
 # Create a simple CPU
-system.cpu = X86TimingSimpleCPU()
-# Create an L1 instruction and data cache
-system.cpu.icache = L1ICache(args)
-system.cpu.dcache = L1DCache(args)
+system.cpu = [DerivO3CPU() for i in range(num_cpus)]
 
-# Connect the instruction and data caches to the CPU
-system.cpu.icache.connectCPU(system.cpu)
-system.cpu.dcache.connectCPU(system.cpu)
+for i in range(num_cpus):
+    system.cpu[i].icache = L1ICache()
+    system.cpu[i].icache.size="16kB"
+    system.cpu[i].dcache = L1DCache()
+    system.cpu[i].dcache.size="16kB"
+    system.cpu[i].icache.connectCPU(system.cpu[i])
+    system.cpu[i].dcache.connectCPU(system.cpu[i])
+# Create an L1 instruction and data cache
+
+
+# system.cpu.icache = L1ICache(args)
+# system.cpu.dcache = L1DCache(args)
+
+# # Connect the instruction and data caches to the CPU
+# system.cpu.icache.connectCPU(system.cpu)
+# system.cpu.dcache.connectCPU(system.cpu)
 
 # Create a memory bus, a coherent crossbar, in this case
 system.l2bus = L2XBar()
 
-# Hook the CPU ports up to the l2bus
-system.cpu.icache.connectBus(system.l2bus)
-system.cpu.dcache.connectBus(system.l2bus)
+for i in range(num_cpus):
+    system.cpu[i].icache.connectBus(system.l2bus)
+    system.cpu[i].dcache.connectBus(system.l2bus)
+
+# # Hook the CPU ports up to the l2bus
+# system.cpu.icache.connectBus(system.l2bus)
+# system.cpu.dcache.connectBus(system.l2bus)
 
 # Create an L2 cache and connect it to the l2bus
 system.l2cache = L2Cache(args)
 system.l2cache.connectCPUSideBus(system.l2bus)
+system.l2cache.size="512kB"
+system.l2cache.assoc=8
 
 # Create a memory bus
 system.membus = SystemXBar()
@@ -116,11 +133,12 @@ system.membus = SystemXBar()
 # Connect the L2 cache to the membus
 system.l2cache.connectMemSideBus(system.membus)
 
-# create the interrupt controller for the CPU
-system.cpu.createInterruptController()
-system.cpu.interrupts[0].pio = system.membus.mem_side_ports
-system.cpu.interrupts[0].int_requestor = system.membus.cpu_side_ports
-system.cpu.interrupts[0].int_responder = system.membus.mem_side_ports
+# # create the interrupt controller for the CPU
+for i in range(num_cpus):
+    system.cpu[i].createInterruptController()
+    system.cpu[i].interrupts[0].pio = system.membus.mem_side_ports
+    system.cpu[i].interrupts[0].int_requestor = system.membus.cpu_side_ports
+    system.cpu[i].interrupts[0].int_responder = system.membus.mem_side_ports
 
 # Connect the system up to the membus
 system.system_port = system.membus.cpu_side_ports
@@ -128,7 +146,7 @@ system.system_port = system.membus.cpu_side_ports
 # Create a DDR3 memory controller
 system.mem_ctrl = Ramulator2()
 system.mem_ctrl.port = system.membus.mem_side_ports
-system.mem_ctrl.config_path = "/home/wonjaechoi/gem5/gem5/ext/ramulator2/example_config.yaml"
+system.mem_ctrl.config_path = "/gem5/gem5/ext/ramulator2/example_config.yaml"
 system.mem_ctrl.range= system.mem_ranges[0]  # Match this value with DRAM capacity specified in the RAMULATOR2 config file
 # system.dram=DRAMSim2()
 # system.dram.port=system.membus.mem_side_ports
@@ -141,21 +159,23 @@ system.mem_ctrl.range= system.mem_ranges[0]  # Match this value with DRAM capaci
 # system.kvm_vm = KvmVM()
 # system.m5ops_base = max(0xFFFF0000, system.mem_ranges[0].size())
 
-
-system.workload = SEWorkload.init_compatible(args.binary)
-
+procs=[]
 # Create a process for a simple "Hello World" application
-process = Process()
 # process.useArchPT = True
 # process.kvmInSE = True
 # Set the command
 # cmd is a list which begins with the executable (like argv)
-process.cmd = [args.binary]  + args.options.split()
 # process.maxStackSize = "1MB"  # Set the maximum stack size
-process.env = {"OMP_NUM_THREADS": "1"}
 # Set the cpu to use the process as its workload and create thread contexts
-system.cpu.workload = process
-system.cpu.createThreads()
+for i in range(4):
+    p = Process(pid=100 + i)
+    p.cmd = [args.cmd] + args.options.split()
+    procs.append(p)
+    system.cpu[i].workload = p
+    system.cpu[i].createThreads()
+
+
+system.workload = SEWorkload.init_compatible(args.cmd)
 
 # set up the root SimObject and start the simulation
 root = Root(full_system=False, system=system)

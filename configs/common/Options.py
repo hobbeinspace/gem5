@@ -172,6 +172,9 @@ def addNoISAOptions(parser):
 
     parser.add_argument("--memchecker", action="store_true")
 
+    #added for ramulator2
+    parser.add_argument("--ramulator2-config-path",type=str,default="/gem5/gem5/ext/ramulator2/example_config.yaml",help="ramulator2 config file path")
+
     # Cache Options
     parser.add_argument(
         "--external-memory-system",

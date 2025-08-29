@@ -38,7 +38,10 @@ from common import (
     ObjectList,
 )
 
-import m5.objects
+import m5
+
+# import all of the SimObjects
+from m5.objects import *
 
 
 def create_mem_intf(intf, r, i, intlv_bits, intlv_size, xor_low_bit):
@@ -121,7 +124,7 @@ def config_mem(options, system):
     parameters set such that the address range is interleaved between
     them.
     """
-
+    
     # Mandatory options
     opt_mem_channels = options.mem_channels
 
@@ -144,7 +147,19 @@ def config_mem(options, system):
     opt_dram_powerdown = getattr(options, "enable_dram_powerdown", None)
     opt_mem_channels_intlv = getattr(options, "mem_channels_intlv", 128)
     opt_xor_low_bit = getattr(options, "xor_low_bit", 0)
+    if opt_mem_type=="Ramulator2":
 
+        system.mem_ranges=[m5.objects.AddrRange(options.mem_size)]
+        # if(system.mem_mode!="timing"):
+        #     print("Overriding the mem_mode to timing for Ramulator2.")
+        # system.mem_mode="timing"
+        # print("Using timing mode for Ramulator2.")
+        system.mem_ctrl = Ramulator2()
+        system.mem_ctrl.config_path = options.ramulator2_config_path
+        system.mem_ctrl.range= system.mem_ranges[0]  # Match this value with DRAM capacity specified in the RAMULATOR2 config file
+        system.mem_ctrl.port = system.membus.mem_side_ports
+
+        return
     if opt_mem_type == "HMC_2500_1x32":
         HMChost = HMC.config_hmc_host_ctrl(options, system)
         HMC.config_hmc_dev(options, system, HMChost.hmc_host)
@@ -208,13 +223,21 @@ def config_mem(options, system):
     # array of memory interfaces and set their parameters to match
     # their address mapping in the case of a DRAM
     range_iter = 0
+    print(f"mem_type:{opt_mem_type}")
     for r in system.mem_ranges:
         # As the loops iterates across ranges, assign them alternatively
         # to DRAM and NVM if both configured, starting with DRAM
         range_iter += 1
 
         for i in range(nbr_mem_ctrls):
-            if opt_mem_type and (not opt_nvm_type or range_iter % 2 != 0):
+            if opt_mem_type=="Ramulator2":
+                
+                mem_ctrl=Ramulator2()
+                mem_ctrl.config_path = options.ramulator2_config_path
+                mem_ctrl.range= system.mem_ranges[0]
+                mem_ctrls.append(mem_ctrl)
+
+            elif opt_mem_type and (not opt_nvm_type or range_iter % 2 != 0):
                 # Create the DRAM interface
                 dram_intf = create_mem_intf(
                     intf, r, i, intlv_bits, intlv_size, opt_xor_low_bit
@@ -279,6 +302,7 @@ def config_mem(options, system):
             # Set memory device size. There is an independent controller
             # for each vault. All vaults are same size.
             mem_ctrls[i].dram.device_size = options.hmc_dev_vault_size
+
         else:
             # Connect the controllers to the membus
             mem_ctrls[i].port = xbar.mem_side_ports
